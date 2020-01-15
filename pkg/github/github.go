@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v29/github"
 )
 
 // repositoryNamespace contains the owner and repo properties of a Github repository
@@ -24,6 +24,7 @@ func (g *Github) String() string {
 	return fmt.Sprintf("Github client for %s/%s", g.repo.owner, g.repo.repo)
 }
 
+// GetBranch returns a Branch API object if one exists on the GitHub remote
 func (g *Github) GetBranch(name string) (*github.Branch, error) {
 	branch, _, err := g.client.Repositories.GetBranch(g.ctx, g.repo.owner, g.repo.repo, name)
 	return branch, err

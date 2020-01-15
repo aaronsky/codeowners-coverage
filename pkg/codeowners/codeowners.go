@@ -22,13 +22,26 @@ import (
 	"gopkg.in/src-d/go-git.v4"
 )
 
+var codeownersDirectories = []string{".", "docs", ".github"}
+
+// PathIsCodeowners returns whether or not the provided path is for a valid CODEOWNERS file
+// see: https://help.github.com/articles/about-code-owners/#codeowners-file-location
+func PathIsCodeowners(path string, worktree *git.Worktree) bool {
+	for _, dir := range codeownersDirectories {
+		if path == worktree.Filesystem.Join(dir, "CODEOWNERS") {
+			return true
+		}
+	}
+	return false
+}
+
 // Codeowners is the deserialized form of a given CODEOWNERS file
 type Codeowners []Entry
 
 // Entry contains owners for a given pattern
 type Entry struct {
 	LineNo  uint64
-	Pattern string
+	Pattern Pattern
 	Owners  []string
 }
 
@@ -51,7 +64,7 @@ func NewFromTree(worktree *git.Worktree) (Codeowners, error) {
 // see: https://help.github.com/articles/about-code-owners/#codeowners-file-location
 func openCodeownersFile(worktree *git.Worktree) (io.Reader, error) {
 	fs := worktree.Filesystem
-	for _, p := range []string{".", "docs", ".github"} {
+	for _, p := range codeownersDirectories {
 		path := fs.Join(p)
 		if _, err := fs.Stat(path); err != nil {
 			if os.IsNotExist(err) {
@@ -90,13 +103,34 @@ func parseCodeowners(r io.Reader) []Entry {
 		if strings.HasPrefix(fields[0], "#") { // comment
 			continue
 		}
+		pattern := fields[0]
+		owners := fields[1:]
 
 		e = append(e, Entry{
-			Pattern: fields[0],
-			Owners:  fields[1:],
+			Pattern: Pattern(pattern),
+			Owners:  owners,
 			LineNo:  no,
 		})
 	}
 
 	return e
+}
+
+// Owners returns the list of owners for a given path, in the event of a match
+func (o *Codeowners) Owners(path string, worktree *git.Worktree) ([]string, error) {
+	owners := []string{}
+	if o == nil {
+		return owners, nil
+	}
+	for _, entry := range *o {
+		matches, err := entry.Pattern.Matches(path)
+		if err != nil {
+			continue
+		}
+		if matches {
+			fmt.Println("Matched", path, "against", entry.Pattern)
+			owners = entry.Owners
+		}
+	}
+	return owners, nil
 }

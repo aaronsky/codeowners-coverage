@@ -2,36 +2,28 @@ package internal
 
 import (
 	"encoding/json"
-	"fmt"
+	"os"
 	"strings"
 
 	"github.com/aaronsky/codeowners-coverage/pkg/codeowners"
 	"github.com/aaronsky/codeowners-coverage/pkg/git"
-	"github.com/aaronsky/codeowners-coverage/pkg/github"
 )
 
 // Report contains information on the codeowner coverage of files in a repository
 type Report struct {
-	RemoteURL         string `json:"remote_url"`
-	SHA               string `json:"sha"`
-	CoveredFilesCount int    `json:"covered_files_count"`
-	TotalFilesCount   int    `json:"total_files_count"`
+	RemoteURL         string  `json:"remote_url"`
+	SHA               string  `json:"sha"`
+	CoveredFilesCount int     `json:"covered_files_count"`
+	TotalFilesCount   int     `json:"total_files_count"`
+	CoverageRatio     float64 `json:"coverage_ratio"`
 }
 
 // NewCoverageReport produces a coverage report from the given repository
 func NewCoverageReport(remote, token string) (*Report, error) {
-	// get list of all files in the repository
-	// check for a codeowners file
-	// 		if none, produce output of 0% coverage and a message that no file was found
-	// parse each of the patterns of the codeowners file
-	// coverage % = sum of count of file matches for each pattern / count of all files
-	// produce output
-
-	hub, err := github.NewGithub(remote, token)
-	if err != nil {
-		return nil, err
-	}
-	repository, err := git.Clone(remote)
+	// It doesn't matter what we provide here for a username so we just pass the token twice
+	repository, err := git.Clone(remote, &git.BasicAuth{
+		Password: token,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -43,21 +35,51 @@ func NewCoverageReport(remote, token string) (*Report, error) {
 	if err != nil {
 		return nil, err
 	}
-	codeowners, err := codeowners.NewFromTree(worktree)
+	owners, err := codeowners.NewFromTree(worktree)
 	if err != nil {
 		return nil, err
 	}
 
-	// fs := worktree.Filesystem
+	report := &Report{RemoteURL: remote, SHA: headSHA.Hash().String()}
+	err = report.setCoverage(worktree, owners)
+	if err != nil {
+		return nil, err
+	}
+	return report, nil
+}
 
-	fmt.Println(hub)
-	fmt.Println(codeowners)
-	return &Report{
-		RemoteURL:         remote,
-		SHA:               headSHA.Hash().String(),
-		TotalFilesCount:   0,
-		CoveredFilesCount: 0,
-	}, nil
+// setCoverage mutates the Report object to store information on covered files and the ratio of coverage
+func (r *Report) setCoverage(worktree *git.Worktree, owners codeowners.Codeowners) error {
+	var totalFilesCount int
+	var filesToCheckCoverage []string
+	var coveredFilesCount int
+
+	err := git.WalkTree(worktree, func(path string, info os.FileInfo, err error) error {
+		if info.Mode().IsRegular() && !codeowners.PathIsCodeowners(path, worktree) {
+			totalFilesCount++
+			filesToCheckCoverage = append(filesToCheckCoverage, path)
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	for _, path := range filesToCheckCoverage {
+		ownersForPath, err := owners.Owners(path, worktree)
+		if err != nil {
+			continue
+		}
+		if len(ownersForPath) > 0 {
+			coveredFilesCount++
+		}
+	}
+
+	r.CoveredFilesCount = coveredFilesCount
+	r.TotalFilesCount = totalFilesCount
+	r.CoverageRatio = float64(coveredFilesCount) / float64(totalFilesCount)
+
+	return nil
 }
 
 // ToFormat converts the report to a string in the given format.

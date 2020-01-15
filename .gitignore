@@ -16,6 +16,7 @@ vendor/
 
 # VSCode
 __debug_bin
+codeowners-coverage
 
 # Environment files, containing secrets
 .env
