@@ -19,19 +19,10 @@ func main() {
 				Usage: "Report format",
 				Value: "json",
 			},
-			&cli.StringFlag{
-				Name:     "token",
-				Usage:    "GitHub token",
-				Required: true,
-				EnvVars:  []string{"GITHUB_TOKEN"},
-			},
 		},
+		ArgsUsage: "[path to repository]",
 		Action: func(c *cli.Context) error {
-			remote := c.Args().First()
-			token := c.String("token")
-			if token == "" {
-				return fmt.Errorf("A valid Github token is required")
-			}
+			path := c.Args().First()
 
 			format := c.String("format")
 			// Currently only the 'json' format is supported
@@ -39,7 +30,7 @@ func main() {
 				return fmt.Errorf("Only JSON format is supported for now")
 			}
 
-			report, err := internal.NewCoverageReport(remote, token)
+			report, err := internal.NewCoverageReport(path)
 			if err != nil {
 				return err
 			}

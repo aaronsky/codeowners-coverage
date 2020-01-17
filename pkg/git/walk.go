@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"gopkg.in/src-d/go-billy.v4"
 	"gopkg.in/src-d/go-git.v4"
 )
 
@@ -17,14 +18,13 @@ var SkipDir = filepath.SkipDir
 type WalkFunc func(path string, info os.FileInfo, err error) error
 
 // WalkTree will recursively crawl a go-git Worktree and invoke a callback for each file and directory
-func WalkTree(worktree *git.Worktree, cb WalkFunc) error {
-	fs := worktree.Filesystem
+func WalkTree(fs billy.Filesystem, cb WalkFunc) error {
 	root := fs.Join(".")
 	info, err := fs.Stat(root)
 	if err != nil {
 		err = cb(root, nil, err)
 	} else {
-		err = walk(worktree, root, info, cb)
+		err = walk(fs, root, info, cb)
 	}
 	if err == SkipDir {
 		return nil
@@ -32,10 +32,11 @@ func WalkTree(worktree *git.Worktree, cb WalkFunc) error {
 	return err
 }
 
-func walk(worktree *git.Worktree, path string, info os.FileInfo, cb WalkFunc) error {
-	fs := worktree.Filesystem
+func walk(fs billy.Filesystem, path string, info os.FileInfo, cb WalkFunc) error {
 	if !info.IsDir() {
 		return cb(path, info, nil)
+	} else if info.Name() == ".git" {
+		return nil
 	}
 
 	infos, err := fs.ReadDir(path)
@@ -54,7 +55,7 @@ func walk(worktree *git.Worktree, path string, info os.FileInfo, cb WalkFunc) er
 			}
 			continue
 		}
-		err = walk(worktree, filename, fileInfo, cb)
+		err = walk(fs, filename, fileInfo, cb)
 		if err != nil && (!fileInfo.IsDir() || err != SkipDir) {
 			return err
 		}

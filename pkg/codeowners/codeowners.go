@@ -19,16 +19,16 @@ import (
 	"os"
 	"strings"
 
-	"gopkg.in/src-d/go-git.v4"
+	"gopkg.in/src-d/go-billy.v4"
 )
 
 var codeownersDirectories = []string{".", "docs", ".github"}
 
 // PathIsCodeowners returns whether or not the provided path is for a valid CODEOWNERS file
 // see: https://help.github.com/articles/about-code-owners/#codeowners-file-location
-func PathIsCodeowners(path string, worktree *git.Worktree) bool {
+func PathIsCodeowners(path string, fs billy.Filesystem) bool {
 	for _, dir := range codeownersDirectories {
-		if path == worktree.Filesystem.Join(dir, "CODEOWNERS") {
+		if path == fs.Join(dir, "CODEOWNERS") {
 			return true
 		}
 	}
@@ -41,7 +41,7 @@ type Codeowners []Entry
 // Entry contains owners for a given pattern
 type Entry struct {
 	LineNo  uint64
-	Pattern Pattern
+	Pattern *Pattern
 	Owners  []string
 }
 
@@ -49,21 +49,19 @@ func (e Entry) String() string {
 	return fmt.Sprintf("line %d: %s\t%v", e.LineNo, e.Pattern, strings.Join(e.Owners, ", "))
 }
 
-// NewFromTree loads and deserializes a CODEOWNERS file from the given repository, if one exists
-func NewFromTree(worktree *git.Worktree) (Codeowners, error) {
-	r, err := openCodeownersFile(worktree)
+// LoadFromFilesystem loads and deserializes a CODEOWNERS file from the given repository, if one exists
+func LoadFromFilesystem(fs billy.Filesystem) (Codeowners, error) {
+	r, err := openCodeownersFile(fs)
 	if err != nil {
 		return nil, err
 	}
 
-	entries := parseCodeowners(r)
-	return entries, nil
+	return parseCodeowners(r)
 }
 
 // openCodeownersFile finds a CODEOWNERS file and returns content.
 // see: https://help.github.com/articles/about-code-owners/#codeowners-file-location
-func openCodeownersFile(worktree *git.Worktree) (io.Reader, error) {
-	fs := worktree.Filesystem
+func openCodeownersFile(fs billy.Filesystem) (io.Reader, error) {
 	for _, p := range codeownersDirectories {
 		path := fs.Join(p)
 		if _, err := fs.Stat(path); err != nil {
@@ -88,7 +86,7 @@ func openCodeownersFile(worktree *git.Worktree) (io.Reader, error) {
 	return nil, fmt.Errorf("No CODEOWNERS found in the root, docs/, or .github/ directory of the repository")
 }
 
-func parseCodeowners(r io.Reader) []Entry {
+func parseCodeowners(r io.Reader) ([]Entry, error) {
 	var e []Entry
 	s := bufio.NewScanner(r)
 	no := uint64(0)
@@ -103,32 +101,30 @@ func parseCodeowners(r io.Reader) []Entry {
 		if strings.HasPrefix(fields[0], "#") { // comment
 			continue
 		}
-		pattern := fields[0]
+		pattern, err := CompilePattern(fields[0])
+		if err != nil {
+			return nil, err
+		}
 		owners := fields[1:]
 
 		e = append(e, Entry{
-			Pattern: Pattern(pattern),
+			Pattern: pattern,
 			Owners:  owners,
 			LineNo:  no,
 		})
 	}
 
-	return e
+	return e, nil
 }
 
 // Owners returns the list of owners for a given path, in the event of a match
-func (o *Codeowners) Owners(path string, worktree *git.Worktree) ([]string, error) {
+func (o *Codeowners) Owners(path string) ([]string, error) {
 	owners := []string{}
 	if o == nil {
 		return owners, nil
 	}
 	for _, entry := range *o {
-		matches, err := entry.Pattern.Matches(path)
-		if err != nil {
-			continue
-		}
-		if matches {
-			fmt.Println("Matched", path, "against", entry.Pattern)
+		if entry.Pattern.Matches(path) {
 			owners = entry.Owners
 		}
 	}

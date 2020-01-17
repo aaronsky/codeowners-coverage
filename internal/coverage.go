@@ -7,6 +7,7 @@ import (
 
 	"github.com/aaronsky/codeowners-coverage/pkg/codeowners"
 	"github.com/aaronsky/codeowners-coverage/pkg/git"
+	"gopkg.in/src-d/go-billy.v4"
 )
 
 // Report contains information on the codeowner coverage of files in a repository
@@ -19,14 +20,20 @@ type Report struct {
 }
 
 // NewCoverageReport produces a coverage report from the given repository
-func NewCoverageReport(remote, token string) (*Report, error) {
+func NewCoverageReport(path string) (*Report, error) {
 	// It doesn't matter what we provide here for a username so we just pass the token twice
-	repository, err := git.Clone(remote, &git.BasicAuth{
-		Password: token,
-	})
+	// repository, err := git.Clone(remote, &git.BasicAuth{
+	// 	Password: token,
+	// })
+	repository, err := git.Open(path)
 	if err != nil {
 		return nil, err
 	}
+	remote, err := repository.Remote("origin")
+	if err != nil {
+		return nil, err
+	}
+	remoteURL := remote.Config().URLs[0]
 	headSHA, err := repository.Head()
 	if err != nil {
 		return nil, err
@@ -35,13 +42,14 @@ func NewCoverageReport(remote, token string) (*Report, error) {
 	if err != nil {
 		return nil, err
 	}
-	owners, err := codeowners.NewFromTree(worktree)
+	fs := worktree.Filesystem
+	owners, err := codeowners.LoadFromFilesystem(fs)
 	if err != nil {
 		return nil, err
 	}
 
-	report := &Report{RemoteURL: remote, SHA: headSHA.Hash().String()}
-	err = report.setCoverage(worktree, owners)
+	report := &Report{RemoteURL: remoteURL, SHA: headSHA.Hash().String()}
+	err = report.setCoverage(fs, owners)
 	if err != nil {
 		return nil, err
 	}
@@ -49,13 +57,13 @@ func NewCoverageReport(remote, token string) (*Report, error) {
 }
 
 // setCoverage mutates the Report object to store information on covered files and the ratio of coverage
-func (r *Report) setCoverage(worktree *git.Worktree, owners codeowners.Codeowners) error {
+func (r *Report) setCoverage(fs billy.Filesystem, owners codeowners.Codeowners) error {
 	var totalFilesCount int
 	var filesToCheckCoverage []string
 	var coveredFilesCount int
 
-	err := git.WalkTree(worktree, func(path string, info os.FileInfo, err error) error {
-		if info.Mode().IsRegular() && !codeowners.PathIsCodeowners(path, worktree) {
+	err := git.WalkTree(fs, func(path string, info os.FileInfo, err error) error {
+		if info.Mode().IsRegular() && !codeowners.PathIsCodeowners(path, fs) {
 			totalFilesCount++
 			filesToCheckCoverage = append(filesToCheckCoverage, path)
 		}
@@ -66,7 +74,7 @@ func (r *Report) setCoverage(worktree *git.Worktree, owners codeowners.Codeowner
 	}
 
 	for _, path := range filesToCheckCoverage {
-		ownersForPath, err := owners.Owners(path, worktree)
+		ownersForPath, err := owners.Owners(path)
 		if err != nil {
 			continue
 		}
