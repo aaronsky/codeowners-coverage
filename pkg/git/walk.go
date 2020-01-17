@@ -5,14 +5,7 @@ import (
 	"path/filepath"
 
 	"gopkg.in/src-d/go-billy.v4"
-	"gopkg.in/src-d/go-git.v4"
 )
-
-// Worktree is a re-export of go-git Worktree
-type Worktree = git.Worktree
-
-// SkipDir is a re-export of the filepath.SkipDir error
-var SkipDir = filepath.SkipDir
 
 // WalkFunc is the callback function signature used by WalkTree
 type WalkFunc func(path string, info os.FileInfo, err error) error
@@ -26,7 +19,7 @@ func WalkTree(fs billy.Filesystem, cb WalkFunc) error {
 	} else {
 		err = walk(fs, root, info, cb)
 	}
-	if err == SkipDir {
+	if err == filepath.SkipDir {
 		return nil
 	}
 	return err
@@ -50,13 +43,13 @@ func walk(fs billy.Filesystem, path string, info os.FileInfo, cb WalkFunc) error
 		filename := fs.Join(path, info.Name())
 		fileInfo, err := fs.Stat(filename)
 		if err != nil {
-			if err := cb(filename, fileInfo, err); err != nil && err != SkipDir {
+			if err := cb(filename, fileInfo, err); err != nil && err != filepath.SkipDir {
 				return err
 			}
 			continue
 		}
 		err = walk(fs, filename, fileInfo, cb)
-		if err != nil && (!fileInfo.IsDir() || err != SkipDir) {
+		if err != nil && (!fileInfo.IsDir() || err != filepath.SkipDir) {
 			return err
 		}
 	}
