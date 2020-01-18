@@ -39,10 +39,7 @@ func TestLoadFromFilesystem(t *testing.T) {
 	if owners == nil {
 		t.Error("expected codeowners object to be loaded")
 	}
-	names, err := owners.Owners("dog.js")
-	if err != nil {
-		t.Error(err)
-	}
+	names := owners.Owners("dog.js")
 	if len(names) == 0 {
 		t.Error("expected owners to be found for 'dog.js'")
 	}
@@ -66,7 +63,7 @@ func TestLoadFromFilesystemFails(t *testing.T) {
 
 func TestOwnersFromNilReturnsEmpty(t *testing.T) {
 	var o Codeowners = nil
-	owners, _ := o.Owners("jeff")
+	owners := o.Owners("jeff")
 	if len(owners) > 0 {
 		t.Error("expected no owners to be returned for nil Codeowners object")
 	}

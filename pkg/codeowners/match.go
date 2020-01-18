@@ -24,6 +24,11 @@ type Pattern struct {
 	negate  bool
 }
 
+// NewPattern creates a new Pattern object behind a pointer
+func NewPattern(regex *regexp.Regexp, negate bool) *Pattern {
+	return &Pattern{pattern: regex, negate: negate}
+}
+
 func (p *Pattern) String() string {
 	negatedString := ""
 	if p.negate {
@@ -118,7 +123,7 @@ func CompilePattern(pattern string) (*Pattern, error) {
 		return nil, err
 	}
 
-	return &Pattern{pattern: regex, negate: negatePattern}, nil
+	return NewPattern(regex, negatePattern), nil
 }
 
 func handleConsecutiveAsterisks(pattern, magicStar string) string {

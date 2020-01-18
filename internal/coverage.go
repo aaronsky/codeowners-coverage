@@ -2,8 +2,8 @@ package internal
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
-	"strings"
 
 	"github.com/aaronsky/codeowners-coverage/pkg/codeowners"
 	"github.com/aaronsky/codeowners-coverage/pkg/git"
@@ -21,10 +21,6 @@ type Report struct {
 
 // NewCoverageReport produces a coverage report from the given repository
 func NewCoverageReport(path string) (*Report, error) {
-	// It doesn't matter what we provide here for a username so we just pass the token twice
-	// repository, err := git.Clone(remote, &git.BasicAuth{
-	// 	Password: token,
-	// })
 	repository, err := git.Open(path)
 	if err != nil {
 		return nil, err
@@ -74,10 +70,7 @@ func (r *Report) setCoverage(fs billy.Filesystem, owners codeowners.Codeowners) 
 	}
 
 	for _, path := range filesToCheckCoverage {
-		ownersForPath, err := owners.Owners(path)
-		if err != nil {
-			continue
-		}
+		ownersForPath := owners.Owners(path)
 		if len(ownersForPath) > 0 {
 			coveredFilesCount++
 		}
@@ -85,20 +78,31 @@ func (r *Report) setCoverage(fs billy.Filesystem, owners codeowners.Codeowners) 
 
 	r.CoveredFilesCount = coveredFilesCount
 	r.TotalFilesCount = totalFilesCount
-	r.CoverageRatio = float64(coveredFilesCount) / float64(totalFilesCount)
+	if totalFilesCount > 0 {
+		r.CoverageRatio = float64(coveredFilesCount) / float64(totalFilesCount)
+	}
 
 	return nil
 }
 
+type reportFormat string
+
+const (
+	// ReportFormatJSON is a constant representing the JSON format for a Report object
+	ReportFormatJSON reportFormat = "json"
+)
+
 // ToFormat converts the report to a string in the given format.
 // Currently only "json" is supported.
-func (r *Report) ToFormat(format string) (string, error) {
-	if strings.ToLower(format) == "json" {
+func (r *Report) ToFormat(format reportFormat) (string, error) {
+	switch format {
+	case ReportFormatJSON:
 		bytes, err := json.Marshal(r)
 		if err != nil {
-			return "", nil
+			return "", err
 		}
 		return string(bytes), nil
+	default:
+		return "", fmt.Errorf("Unsupported reportFormat")
 	}
-	return "", nil
 }

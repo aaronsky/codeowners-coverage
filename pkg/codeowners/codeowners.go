@@ -41,12 +41,12 @@ type Codeowners []Entry
 // Entry contains owners for a given pattern
 type Entry struct {
 	LineNo  uint64
-	Pattern *Pattern
+	Pattern Pattern
 	Owners  []string
 }
 
 func (e Entry) String() string {
-	return fmt.Sprintf("line %d: %s\t%v", e.LineNo, e.Pattern, strings.Join(e.Owners, ", "))
+	return fmt.Sprintf("line %d: %s\t%v", e.LineNo, e.Pattern.String(), strings.Join(e.Owners, ", "))
 }
 
 // LoadFromFilesystem loads and deserializes a CODEOWNERS file from the given repository, if one exists
@@ -108,7 +108,7 @@ func parseCodeowners(r io.Reader) ([]Entry, error) {
 		owners := fields[1:]
 
 		e = append(e, Entry{
-			Pattern: pattern,
+			Pattern: *pattern,
 			Owners:  owners,
 			LineNo:  no,
 		})
@@ -118,15 +118,15 @@ func parseCodeowners(r io.Reader) ([]Entry, error) {
 }
 
 // Owners returns the list of owners for a given path, in the event of a match
-func (o *Codeowners) Owners(path string) ([]string, error) {
+func (o *Codeowners) Owners(path string) []string {
 	owners := []string{}
 	if o == nil {
-		return owners, nil
+		return owners
 	}
 	for _, entry := range *o {
 		if entry.Pattern.Matches(path) {
 			owners = entry.Owners
 		}
 	}
-	return owners, nil
+	return owners
 }
