@@ -25,6 +25,7 @@ func NewCoverageReport(path string) (*Report, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	remote, err := repository.Remote("origin")
 	if err != nil {
 		return nil, err
@@ -34,10 +35,17 @@ func NewCoverageReport(path string) (*Report, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	worktree, err := repository.Worktree()
 	if err != nil {
 		return nil, err
 	}
+	status, err := worktree.Status()
+	if err != nil {
+		return nil, err
+	}
+	git.CleanWorktree(worktree)
+
 	fs := worktree.Filesystem
 	owners, err := codeowners.LoadFromFilesystem(fs)
 	if err != nil {
@@ -45,7 +53,7 @@ func NewCoverageReport(path string) (*Report, error) {
 	}
 
 	report := &Report{RemoteURL: remoteURL, SHA: headSHA.Hash().String()}
-	err = report.setCoverage(fs, owners)
+	err = report.setCoverage(status, fs, owners)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +61,7 @@ func NewCoverageReport(path string) (*Report, error) {
 }
 
 // setCoverage mutates the Report object to store information on covered files and the ratio of coverage
-func (r *Report) setCoverage(fs billy.Filesystem, owners codeowners.Codeowners) error {
+func (r *Report) setCoverage(status git.Status, fs billy.Filesystem, owners codeowners.Codeowners) error {
 	var totalFilesCount int
 	var filesToCheckCoverage []string
 	var coveredFilesCount int
@@ -65,9 +73,9 @@ func (r *Report) setCoverage(fs billy.Filesystem, owners codeowners.Codeowners) 
 		} else if codeowners.PathIsCodeowners(path, fs) {
 			// skip codeowners
 			return nil
-		} else if tracked, err := git.IsPathTracked(path, fs); !tracked {
-			// not tracked, or some other issue
-			return err
+		} else if status.IsUntracked(path) {
+			// path is untracked
+			return nil
 		}
 
 		totalFilesCount++

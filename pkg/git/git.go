@@ -1,7 +1,6 @@
 package git
 
 import (
-	"gopkg.in/src-d/go-billy.v4"
 	"gopkg.in/src-d/go-git.v4"
 )
 
@@ -12,8 +11,12 @@ func Open(path string) (*git.Repository, error) {
 	})
 }
 
-// IsPathTracked returns whether or not a path is tracked under the current repository
-func IsPathTracked(path string, fs billy.Filesystem) (bool, error) {
-	// FIXME: currently a no-op with dangerous implications
-	return true, nil
+// Status is a re-export of go-git Status
+type Status = git.Status
+
+// CleanWorktree runs the equivalent of `git clean -xfd .` on the current worktree
+func CleanWorktree(worktree *git.Worktree) error {
+	return worktree.Clean(&git.CleanOptions{
+		Dir: true,
+	})
 }

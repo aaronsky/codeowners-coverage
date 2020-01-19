@@ -5,8 +5,10 @@ import (
 	"testing"
 
 	"github.com/aaronsky/codeowners-coverage/pkg/codeowners"
+	"github.com/aaronsky/codeowners-coverage/pkg/git"
 	"gopkg.in/src-d/go-billy.v4"
 	"gopkg.in/src-d/go-billy.v4/memfs"
+	go_git "gopkg.in/src-d/go-git.v4"
 )
 
 func TestSetCoverage(t *testing.T) {
@@ -15,14 +17,13 @@ func TestSetCoverage(t *testing.T) {
 		SHA:       "0b18ca88",
 	}
 
-	mockFs, _ := setupPopulatedFilesystem()
-
+	mockStatus, mockFs, _ := setupPopulatedFilesystem()
 	owners, err := codeowners.LoadFromFilesystem(mockFs)
 	if err != nil {
 		t.Error(err)
 	}
 
-	err = report.setCoverage(mockFs, owners)
+	err = report.setCoverage(mockStatus, mockFs, owners)
 	if err != nil {
 		t.Error(err)
 	}
@@ -78,25 +79,39 @@ func TestToFormatWithInvalidFormat(t *testing.T) {
 	}
 }
 
-func setupPopulatedFilesystem() (fs billy.Filesystem, countFiles int) {
+func setupPopulatedFilesystem() (status git.Status, fs billy.Filesystem, countFiles int) {
+	status = git.Status{}
 	fs = memfs.New()
 
 	fs.MkdirAll("src", os.ModeDir)
 
-	file, _ := fs.Create("CODEOWNERS")
-	file.Write([]byte(`*.js		@org/team_reviewers`))
+	createFile("CODEOWNERS", []byte(`*.js		@org/team_reviewers`), fs, &status)
 	countFiles++
 
-	fs.Create("README.md")
-	countFiles++
-	fs.Create("index.js")
-	countFiles++
-	fs.Create("src/app.js")
-	countFiles++
-	fs.Create("src/index.html")
-	countFiles++
-	fs.Create("src/index.css")
+	createFile("README.md", nil, fs, &status)
 	countFiles++
 
-	return fs, countFiles
+	createFile("index.js", nil, fs, &status)
+	countFiles++
+
+	createFile("src/app.js", nil, fs, &status)
+	countFiles++
+
+	createFile("src/index.html", nil, fs, &status)
+	countFiles++
+
+	createFile("src/index.css", nil, fs, &status)
+	countFiles++
+
+	return status, fs, countFiles
+}
+
+func createFile(path string, content []byte, fs billy.Filesystem, status *git.Status) {
+	file, _ := fs.Create(path)
+	if len(content) > 0 {
+		file.Write(content)
+	}
+	fileStatus := status.File(path)
+	fileStatus.Staging = go_git.Unmodified
+	fileStatus.Worktree = go_git.Unmodified
 }
