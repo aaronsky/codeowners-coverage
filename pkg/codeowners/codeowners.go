@@ -19,6 +19,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/aaronsky/codeowners-coverage/pkg/git"
 	"gopkg.in/src-d/go-billy.v4"
 )
 
@@ -41,7 +42,7 @@ type Codeowners []Entry
 // Entry contains owners for a given pattern
 type Entry struct {
 	LineNo  uint64
-	Pattern Pattern
+	Pattern git.IgnorePattern
 	Owners  []string
 }
 
@@ -101,7 +102,7 @@ func parseCodeowners(r io.Reader) ([]Entry, error) {
 		if strings.HasPrefix(fields[0], "#") { // comment
 			continue
 		}
-		pattern, err := CompilePattern(fields[0])
+		pattern, err := git.CompileIgnorePattern(fields[0])
 		if err != nil {
 			return nil, err
 		}

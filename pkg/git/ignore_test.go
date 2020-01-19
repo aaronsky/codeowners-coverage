@@ -1,9 +1,9 @@
-package codeowners
+package git
 
 import "testing"
 
 func TestCommentLinePattern(t *testing.T) {
-	pattern, err := CompilePattern("# This is a comment.")
+	pattern, err := CompileIgnorePattern("# This is a comment.")
 	if err == nil {
 		t.Error("expected string to not compile")
 	} else if pattern != nil {
@@ -12,7 +12,7 @@ func TestCommentLinePattern(t *testing.T) {
 }
 
 func TestEmptyLinePattern(t *testing.T) {
-	pattern, err := CompilePattern("                    ")
+	pattern, err := CompileIgnorePattern("                    ")
 	if err == nil {
 		t.Error("expected string to not compile")
 	} else if pattern != nil {
@@ -21,7 +21,7 @@ func TestEmptyLinePattern(t *testing.T) {
 }
 
 func TestSingleAsteriskPattern(t *testing.T) {
-	pattern, err := CompilePattern("*")
+	pattern, err := CompileIgnorePattern("*")
 	if err != nil {
 		t.Error(err)
 	} else if pattern == nil {
@@ -36,7 +36,7 @@ func TestSingleAsteriskPattern(t *testing.T) {
 }
 
 func TestFileGlobPattern(t *testing.T) {
-	pattern, err := CompilePattern("*.js")
+	pattern, err := CompileIgnorePattern("*.js")
 	if err != nil {
 		t.Error(err)
 	} else if pattern == nil {
@@ -54,7 +54,7 @@ func TestFileGlobPattern(t *testing.T) {
 }
 
 func TestFilePathGlobPattern(t *testing.T) {
-	pattern, err := CompilePattern("damn/*.js")
+	pattern, err := CompileIgnorePattern("damn/*.js")
 	if err != nil {
 		t.Error(err)
 	} else if pattern == nil {
@@ -78,7 +78,7 @@ func TestFilePathGlobPattern(t *testing.T) {
 }
 
 func TestTrailingGlobPattern(t *testing.T) {
-	pattern, err := CompilePattern("docs/*")
+	pattern, err := CompileIgnorePattern("docs/*")
 	if err != nil {
 		t.Error(err)
 	} else if pattern == nil {
@@ -102,7 +102,7 @@ func TestTrailingGlobPattern(t *testing.T) {
 }
 
 func TestLeadingSlashPattern(t *testing.T) {
-	pattern, err := CompilePattern("/build/logs/")
+	pattern, err := CompileIgnorePattern("/build/logs/")
 	if err != nil {
 		t.Error(err)
 	} else if pattern == nil {
@@ -126,7 +126,7 @@ func TestLeadingSlashPattern(t *testing.T) {
 }
 
 func TestNegationPattern(t *testing.T) {
-	pattern, err := CompilePattern("!*.js")
+	pattern, err := CompileIgnorePattern("!*.js")
 	if err != nil {
 		t.Error(err)
 	} else if pattern == nil {

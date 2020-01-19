@@ -1,4 +1,4 @@
-package codeowners
+package git
 
 import (
 	"fmt"
@@ -18,18 +18,18 @@ var (
 	escapedSingleAsteriskPattern     = regexp.MustCompile(`\*`)
 )
 
-// Pattern aliases string to add some additional documentation
-type Pattern struct {
+// IgnorePattern aliases string to add some additional documentation
+type IgnorePattern struct {
 	pattern *regexp.Regexp
 	negate  bool
 }
 
-// NewPattern creates a new Pattern object behind a pointer
-func NewPattern(regex *regexp.Regexp, negate bool) *Pattern {
-	return &Pattern{pattern: regex, negate: negate}
+// newIgnorePattern creates a new Pattern object behind a pointer
+func newIgnorePattern(regex *regexp.Regexp, negate bool) *IgnorePattern {
+	return &IgnorePattern{pattern: regex, negate: negate}
 }
 
-func (p *Pattern) String() string {
+func (p *IgnorePattern) String() string {
 	negatedString := ""
 	if p.negate {
 		negatedString += "not "
@@ -38,7 +38,7 @@ func (p *Pattern) String() string {
 }
 
 // Matches returns whether or not a given path matches the Codeowners path pattern
-func (p *Pattern) Matches(path string) bool {
+func (p *IgnorePattern) Matches(path string) bool {
 	path = strings.Replace(path, string(os.PathSeparator), "/", -1)
 	if p.negate {
 		return !p.pattern.MatchString(path)
@@ -46,8 +46,8 @@ func (p *Pattern) Matches(path string) bool {
 	return p.pattern.MatchString(path)
 }
 
-// CompilePattern takes a given ignore pattern and attempts to create a Pattern object from it
-func CompilePattern(pattern string) (*Pattern, error) {
+// CompileIgnorePattern takes a given ignore pattern and attempts to create a Pattern object from it
+func CompileIgnorePattern(pattern string) (*IgnorePattern, error) {
 	// Trim OS-specific carriage returns.
 	pattern = strings.TrimRight(pattern, "\r")
 
@@ -123,7 +123,7 @@ func CompilePattern(pattern string) (*Pattern, error) {
 		return nil, err
 	}
 
-	return NewPattern(regex, negatePattern), nil
+	return newIgnorePattern(regex, negatePattern), nil
 }
 
 func handleConsecutiveAsterisks(pattern, magicStar string) string {
