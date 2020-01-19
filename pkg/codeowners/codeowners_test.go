@@ -62,7 +62,7 @@ func TestLoadFromFilesystemFails(t *testing.T) {
 }
 
 func TestOwnersFromNilReturnsEmpty(t *testing.T) {
-	var o Codeowners = nil
+	var o Codeowners
 	owners := o.Owners("jeff")
 	if len(owners) > 0 {
 		t.Error("expected no owners to be returned for nil Codeowners object")
