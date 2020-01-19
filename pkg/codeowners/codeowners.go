@@ -37,17 +37,17 @@ func PathIsCodeowners(path string, fs billy.Filesystem) bool {
 }
 
 // Codeowners is the deserialized form of a given CODEOWNERS file
-type Codeowners []Entry
+type Codeowners []OwnerEntry
 
-// Entry contains owners for a given pattern
-type Entry struct {
-	LineNo  uint64
-	Pattern git.IgnorePattern
-	Owners  []string
+// OwnerEntry contains owners for a given pattern
+type OwnerEntry struct {
+	lineNumber uint64
+	Pattern    git.IgnorePattern
+	Owners     []string
 }
 
-func (e Entry) String() string {
-	return fmt.Sprintf("line %d: %s\t%v", e.LineNo, e.Pattern.String(), strings.Join(e.Owners, ", "))
+func (e OwnerEntry) String() string {
+	return fmt.Sprintf("line %d: %s\t%v", e.lineNumber, e.Pattern.String(), strings.Join(e.Owners, ", "))
 }
 
 // LoadFromFilesystem loads and deserializes a CODEOWNERS file from the given repository, if one exists
@@ -87,12 +87,12 @@ func openCodeownersFile(fs billy.Filesystem) (io.Reader, error) {
 	return nil, fmt.Errorf("No CODEOWNERS found in the root, docs/, or .github/ directory of the repository")
 }
 
-func parseCodeowners(r io.Reader) ([]Entry, error) {
-	var e []Entry
+func parseCodeowners(r io.Reader) ([]OwnerEntry, error) {
+	var e []OwnerEntry
 	s := bufio.NewScanner(r)
-	no := uint64(0)
+	var lineNumber uint64
 	for s.Scan() {
-		no++
+		lineNumber++
 		fields := strings.Fields(s.Text())
 
 		if len(fields) == 0 { // empty
@@ -108,10 +108,10 @@ func parseCodeowners(r io.Reader) ([]Entry, error) {
 		}
 		owners := fields[1:]
 
-		e = append(e, Entry{
-			Pattern: *pattern,
-			Owners:  owners,
-			LineNo:  no,
+		e = append(e, OwnerEntry{
+			lineNumber: lineNumber,
+			Pattern:    *pattern,
+			Owners:     owners,
 		})
 	}
 

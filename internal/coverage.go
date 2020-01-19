@@ -59,10 +59,20 @@ func (r *Report) setCoverage(fs billy.Filesystem, owners codeowners.Codeowners) 
 	var coveredFilesCount int
 
 	err := git.WalkTree(fs, func(path string, info os.FileInfo, err error) error {
-		if info.Mode().IsRegular() && !codeowners.PathIsCodeowners(path, fs) {
-			totalFilesCount++
-			filesToCheckCoverage = append(filesToCheckCoverage, path)
+		if !info.Mode().IsRegular() {
+			// not file
+			return nil
+		} else if codeowners.PathIsCodeowners(path, fs) {
+			// skip codeowners
+			return nil
+		} else if tracked, err := git.IsPathTracked(path, fs); !tracked {
+			// not tracked, or some other issue
+			return err
 		}
+
+		totalFilesCount++
+		filesToCheckCoverage = append(filesToCheckCoverage, path)
+
 		return nil
 	})
 	if err != nil {

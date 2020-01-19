@@ -20,8 +20,9 @@ var (
 
 // IgnorePattern aliases string to add some additional documentation
 type IgnorePattern struct {
-	pattern *regexp.Regexp
-	negate  bool
+	lineNumber uint64
+	pattern    *regexp.Regexp
+	negate     bool
 }
 
 // newIgnorePattern creates a new Pattern object behind a pointer
