@@ -2,6 +2,7 @@ package codeowners
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"gopkg.in/src-d/go-billy.v4/memfs"
@@ -9,20 +10,20 @@ import (
 
 func TestWorktreeContainsCodeowners(t *testing.T) {
 	mockFs := memfs.New()
-	if !PathIsCodeowners("CODEOWNERS", mockFs) {
+	if !PathIsCodeowners(filepath.Join(".", "CODEOWNERS"), mockFs) {
 		t.Error("expected root to be valid for containing CODEOWNERS")
 	}
-	if !PathIsCodeowners("docs/CODEOWNERS", mockFs) {
+	if !PathIsCodeowners(filepath.Join("docs", "CODEOWNERS"), mockFs) {
 		t.Error("expected docs/ to be valid for containing CODEOWNERS")
 	}
-	if !PathIsCodeowners(".github/CODEOWNERS", mockFs) {
+	if !PathIsCodeowners(filepath.Join(".github", "CODEOWNERS"), mockFs) {
 		t.Error("expected .github/ to be valid for containing CODEOWNERS")
 	}
-	if PathIsCodeowners("src/CODEOWNERS", mockFs) {
+	if PathIsCodeowners(filepath.Join("src", "CODEOWNERS"), mockFs) {
 		t.Error("expected src to be invalid for containing CODEOWNERS")
 	}
-	if PathIsCodeowners("github/OWNERS", mockFs) {
-		t.Error("expected src to be invalid for containing CODEOWNERS")
+	if PathIsCodeowners(filepath.Join("github", "OWNERS"), mockFs) {
+		t.Error("expected github to be invalid for containing CODEOWNERS")
 	}
 }
 
