@@ -10,7 +10,13 @@ go get github.com/aaronsky/codeowners-coverage
 
 ## Usage
 
-## Contributing
+`codeowners-coverage` works by loading a local Git repository, parsing its CODEOWNERS file, and crawling the disk for matches. To run, simply provide a path to a Git repository.
+
+```
+codeowners-coverage ~/go/src/github.com/docker/compose
+```
+
+In the event of a successful navigation, this will print JSON to stdout describing the coverage attributes of the repository. 
 
 ## License
 
