@@ -1,3 +1,4 @@
+// Package git wraps functionality in the go-git package to manipulate Git repositories
 package git
 
 import (

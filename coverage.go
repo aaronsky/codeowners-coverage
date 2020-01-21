@@ -1,12 +1,13 @@
-package internal
+// Package coverage will generate a coverage report for CODEOWNERS in the repository.
+package coverage
 
 import (
 	"encoding/json"
 	"fmt"
 	"os"
 
-	"github.com/aaronsky/codeowners-coverage/pkg/codeowners"
-	"github.com/aaronsky/codeowners-coverage/pkg/git"
+	"github.com/aaronsky/codeowners-coverage/internal/codeowners"
+	"github.com/aaronsky/codeowners-coverage/internal/git"
 	"gopkg.in/src-d/go-billy.v4"
 )
 
@@ -20,6 +21,7 @@ type Report struct {
 }
 
 // NewCoverageReport produces a coverage report from the given repository
+// Modifies state of the given repository by performing a git-clean.
 func NewCoverageReport(path string) (*Report, error) {
 	repository, err := git.Open(path)
 	if err != nil {
@@ -121,6 +123,6 @@ func (r *Report) ToFormat(format reportFormat) (string, error) {
 		}
 		return string(bytes), nil
 	default:
-		return "", fmt.Errorf("Unsupported reportFormat")
+		return "", fmt.Errorf("unsupported reportFormat")
 	}
 }

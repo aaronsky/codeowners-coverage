@@ -1,11 +1,11 @@
-package internal
+package coverage
 
 import (
 	"os"
 	"testing"
 
-	"github.com/aaronsky/codeowners-coverage/pkg/codeowners"
-	"github.com/aaronsky/codeowners-coverage/pkg/git"
+	"github.com/aaronsky/codeowners-coverage/internal/codeowners"
+	"github.com/aaronsky/codeowners-coverage/internal/git"
 	"gopkg.in/src-d/go-billy.v4"
 	"gopkg.in/src-d/go-billy.v4/memfs"
 	go_git "gopkg.in/src-d/go-git.v4"

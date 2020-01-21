@@ -10,6 +10,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package codeowners contains logic for loading and parsing patterns in CODEOWNERS files
 package codeowners
 
 import (
@@ -19,7 +20,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/aaronsky/codeowners-coverage/pkg/git"
+	"github.com/aaronsky/codeowners-coverage/internal/git"
 	"gopkg.in/src-d/go-billy.v4"
 )
 
@@ -84,7 +85,7 @@ func openCodeownersFile(fs billy.Filesystem) (io.Reader, error) {
 		return fs.Open(file)
 	}
 
-	return nil, fmt.Errorf("No CODEOWNERS found in the root, docs/, or .github/ directory of the repository")
+	return nil, fmt.Errorf("no CODEOWNERS found in the root, docs/, or .github/ directory of the repository")
 }
 
 func parseCodeowners(r io.Reader) ([]OwnerEntry, error) {

@@ -10,7 +10,13 @@ go get github.com/aaronsky/codeowners-coverage
 
 ## Usage
 
-`codeowners-coverage` works by loading a local Git repository, parsing its CODEOWNERS file, and crawling the disk for matches. To run, simply provide a path to a Git repository.
+### As a Package 
+
+
+
+### CLI
+
+`codeowners-coverage` also has a CLI. It works by loading a local Git repository, parsing its CODEOWNERS file, and crawling the disk for matches. To run, simply provide a path to a Git repository.
 
 ```
 codeowners-coverage ~/go/src/github.com/docker/compose
