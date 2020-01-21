@@ -11,15 +11,8 @@ import (
 )
 
 var app = cli.App{
-	Name:  "codeowners-coverage",
-	Usage: "Return codeowners coverage report for a repository",
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:  "format",
-			Usage: "Report format",
-			Value: "json",
-		},
-	},
+	Name:      "codeowners-coverage",
+	Usage:     "Return codeowners coverage report for a repository",
 	ArgsUsage: "[path to repository]",
 	Action:    executeCommand,
 }
