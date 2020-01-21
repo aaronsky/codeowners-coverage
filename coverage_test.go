@@ -103,6 +103,11 @@ func setupPopulatedFilesystem() (status git.Status, fs billy.Filesystem, countFi
 	createFile("src/index.css", nil, fs, &status)
 	countFiles++
 
+	createFile("src/cursed.js", nil, fs, &status)
+	cursedStatus := status.File("src/cursed.js")
+	cursedStatus.Staging = go_git.Untracked
+	cursedStatus.Worktree = go_git.Untracked
+
 	return status, fs, countFiles
 }
 
