@@ -5,14 +5,33 @@
 ## Installation
 
 ```
-go get github.com/aaronsky/codeowners-coverage
+go get github.com/aaronsky/codeowners-coverage/cmd/codeowners-coverage
 ```
 
 ## Usage
 
 ### As a Package 
 
+```go
+import (
+    "fmt"
+    "github.com/aaronsky/codeowners-coverage"
+)
 
+func getMyReport(path string) error {
+	report, err := coverage.NewCoverageReport(path)
+	if err != nil {
+		return err
+    }
+
+	jsonString, err := report.ToFormat(coverage.ReportFormatJSON)
+	if err != nil {
+		return err
+    }
+
+    fmt.Println(jsonString)
+}
+```
 
 ### CLI
 

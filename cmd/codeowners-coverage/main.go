@@ -2,9 +2,13 @@
 package main
 
 import (
-	"github.com/aaronsky/codeowners-coverage/internal/cli"
+	"log"
+	"os"
 )
 
 func main() {
-	cli.CLI()
+	err := app.Run(os.Args)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
